@@ -1,0 +1,16 @@
+{
+  "name": "jekyll-in-nodejs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "serve": "node script.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "copy-dir": "^0.4.0",
+    "kramed": "^0.5.6"
+  }
+}
