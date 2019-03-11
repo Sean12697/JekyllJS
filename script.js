@@ -79,7 +79,10 @@ function mdToMetaAndText(data) {
     if (lineDashed(line)) dashedLines++;
 
     while (dashedLines < 2) { // whiles we haven't reached he second line
-        if (!lineDashed(line)) obj[line.split(':')[0]] = line.split(':')[1]; // push the key/val pair // FIX
+        if (!lineDashed(line)) { // Checking if there are multiple colons in a string
+            let split = line.split(':');
+            obj[split[0]] = (split.length < 2) ? split[1] : split.slice(1).join(':'); 
+        } // push the key/val pair // FIX
         // Pushing next line and check if it is only dashes
         line = arr.shift();
         if (lineDashed(line)) dashedLines++;
