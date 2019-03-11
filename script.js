@@ -1,6 +1,7 @@
 const fs = require('fs'),
     kramed = require('kramed'),
-    copydir = require('copy-dir');
+    copydir = require('copy-dir'),
+    shell = require('shelljs');
 
 let globals = require('./_config.js');
 globals.posts = []; // Setting up array to store post data
@@ -14,29 +15,30 @@ const headModule = require("./_modules/head.js"),
 
 // Generating reusable elements
 const header = headerModule(globals.title, "index.html"),
-    blogHeader = headerModule(globals.title, "../index.html"),
     footer = footerModule(globals.title, globals.description, globals.email, globals.github_username, globals.twitter_username);
 
 // Moving static files to site
-fs.mkdirSync('./_site', { recursive: true });
+shell.mkdir('-p', './_site');
 copydir.sync('./_static', './_site');
 
 // Create Blog posts
-fs.mkdirSync('./_site/posts/', { recursive: true });
+shell.mkdir('-p', './_site/posts/');
 let files = fs.readdirSync('./_posts');
 files.forEach(file => {
     if (file.endsWith(".md") || file.endsWith(".markdown")) {
-        let data = fs.readFileSync(`./_posts/${file}`);
+        let data = fs.readFileSync(`./_posts/${file}`), dirs = fileNameToDir(file);
         // Generating all of the HTML needed for this particular post
         let converted = mdToMetaAndText(data),
-            head = headModule(converted[0].title, globals.description, "../main.css");
+            head = headModule(converted[0].title, globals.description, `${dirs.toRoot}main.css`),     
+            blogHeader = headerModule(globals.title, `${dirs.toRoot}index.html`);
         let html = postTheme(head, blogHeader, converted[0].title, converted[0].date, converted[0].date, kramed(converted[1]), footer);
         // Storing this post
-        fs.writeFileSync(`./_site/posts/${file.split('.')[0]}.html`, html, (e) => {});
+        shell.mkdir('-p', `./_site${dirs.dir}`);
+        fs.writeFileSync(`./_site${dirs.fullPath}`, html, (e) => {});
         // Pushing needed variables to the global object to be used in the home page indexing
         globals.posts.push({
             date: converted[0].date,
-            link: `./posts/${file.split('.')[0]}.html`,
+            link: `.${dirs.fullPath}`,
             title: converted[0].title
         });
     }
@@ -47,6 +49,25 @@ fs.writeFileSync('./_site/index.html', homeTheme(headModule(globals.title, globa
 
 
 // ----------------------------------------- Functions --------------------------------------------------
+
+function fileNameToDir(fileName) {
+    let _dir = "", _fileName = "", _fullPath = "", _toRoot = "../";
+    if (fileName.split("-").length >= 4) { // if the format is kept
+        _toRoot = "../../../"; // Has to jump 3 dirs up to root
+        let parts = fileName.split("-");
+        for (let i = 0; i < 3; i++) _dir += `/${parts.shift()}`;
+        _fileName = fileNameToHtmlName(parts.join('-'))
+    } else { // if the format is not kept
+        _dir = "/posts";
+        _fileName = fileNameToHtmlName(fileName); 
+    }
+    return { dir: _dir, fileName: _fileName, fullPath: `${_dir}/${_fileName}`, toRoot: _toRoot };
+}
+
+function fileNameToHtmlName(fileName) {
+    return `${fileName.split('.').reduce((t, v, i, arr) => t += (i != arr.length-1) ? v : "", "")}.html`;
+}
+
 function mdToMetaAndText(data) {
     let arr = data.toString().replace(/\r/gm, '').split('\n'),
         obj = {},
@@ -58,7 +79,7 @@ function mdToMetaAndText(data) {
     if (lineDashed(line)) dashedLines++;
 
     while (dashedLines < 2) { // whiles we haven't reached he second line
-        if (!lineDashed(line)) obj[line.split(':')[0]] = line.split(':')[1]; // push the key/val pair
+        if (!lineDashed(line)) obj[line.split(':')[0]] = line.split(':')[1]; // push the key/val pair // FIX
         // Pushing next line and check if it is only dashes
         line = arr.shift();
         if (lineDashed(line)) dashedLines++;
