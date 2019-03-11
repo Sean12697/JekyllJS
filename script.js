@@ -28,16 +28,16 @@ files.forEach(file => {
     if (file.endsWith(".md") || file.endsWith(".markdown")) {
         let data = fs.readFileSync(`./_posts/${file}`), dirs = fileNameToDir(file);
         // Generating all of the HTML needed for this particular post
-        let converted = mdToMetaAndText(data),
+        let converted = mdToMetaAndText(data), date = new Date(converted[0].date),
             head = headModule(converted[0].title, globals.description, `${dirs.toRoot}main.css`),     
             blogHeader = headerModule(globals.title, `${dirs.toRoot}index.html`);
-        let html = postTheme(head, blogHeader, converted[0].title, converted[0].date, converted[0].date, kramed(converted[1]), footer);
+        let html = postTheme(head, blogHeader, converted[0].title, date.toISOString() , date.toDateString(), kramed(converted[1]), footer);
         // Storing this post
         shell.mkdir('-p', `./_site${dirs.dir}`);
         fs.writeFileSync(`./_site${dirs.fullPath}`, html, (e) => {});
         // Pushing needed variables to the global object to be used in the home page indexing
         globals.posts.push({
-            date: converted[0].date,
+            date: date.toDateString(),
             link: `.${dirs.fullPath}`,
             title: converted[0].title
         });
@@ -45,6 +45,7 @@ files.forEach(file => {
 });
 
 // Create Home page
+globals.posts = globals.posts.sort((a, b) => (new Date(a.date) - new Date(b.date) > 0) ? -1 : 1);
 fs.writeFileSync('./_site/index.html', homeTheme(headModule(globals.title, globals.description, 'main.css'), header, globals.posts, footer), (e) => {});
 
 

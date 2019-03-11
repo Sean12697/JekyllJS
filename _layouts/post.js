@@ -1,4 +1,4 @@
-module.exports = (head, mainHeader, title, ISO, publishedText, article, footer) => `<!DOCTYPE html>
+module.exports = (head, mainHeader, title, ISO, datePublished, article, footer) => `<!DOCTYPE html>
 <html lang="en">
     ${head}
 <body>
@@ -10,7 +10,7 @@ module.exports = (head, mainHeader, title, ISO, publishedText, article, footer) 
                 <header class="post-header">
                     <h1 class="post-title p-name" itemprop="name headline">${title}</h1>
                     <p class="post-meta">
-                    <time class="dt-published" datetime="${ISO}" itemprop="datePublished">${publishedText}
+                    <time class="dt-published" datetime="${ISO}" itemprop="datePublished">${datePublished}
                     </time></p>
                 </header>
 
