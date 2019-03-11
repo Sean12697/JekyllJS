@@ -8,5 +8,5 @@ Currently you can only alter the `_config.js` file and add files to the `_posts`
 
 If you want to deploy this yourself to a live/free server so it is online, I would recomend using [Netlify](https://www.netlify.com/)), from there (once you have made your changes) there are only two settings you need to set (after selecting the repo and your branch):
 
-* Build Command: `node script.js` or `npm serve`
+* Build Command: `node script.js`
 * Publish Directory: `_site`
