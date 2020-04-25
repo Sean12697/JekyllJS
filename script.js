@@ -28,10 +28,11 @@ files.forEach(file => {
         let data = fs.readFileSync(`_posts/${file}`), dirs = fileNameToDir(file);
         // Generating all of the HTML needed for this particular post
         let converted = mdToMetaAndText(data), date = new Date(converted[0].date),
-            head = headModule(converted[0].title, globals.description, `${dirs.toRoot}main.css`),     
+            keywords = ((converted[0].keywords || "").split(",") || []).map(keyword => keyword.trim()),
+            head = headModule(`${converted[0].title} - ${globals.title}`, converted[1].substr(0, 160), keywords, `${dirs.toRoot}main.css`),     
             blogHeader = headerModule(globals.title, `${dirs.toRoot}index.html`),
             footer = footerModule(globals.title, globals.description, globals.email, globals.social || [], dirs.toRoot);
-            
+
         let html = postTheme(head, blogHeader, converted[0].title, date.toISOString() , date.toDateString(), kramed(converted[1]), footer);
         // Storing this post
         fs.ensureDirSync(`_site${dirs.dir}`);
@@ -54,7 +55,7 @@ files.forEach(file => {
 // Create Home page
 globals.posts = globals.posts.sort((a, b) => (new Date(a.date) - new Date(b.date) > 0) ? -1 : 1);
 let footer = footerModule(globals.title, globals.description, globals.email, globals.social || [], "");
-fs.writeFileSync('_site/index.html', prettifyHTML(homeTheme(headModule(globals.title, globals.description, 'main.css'), header, globals.posts, footer)), () => {});
+fs.writeFileSync('_site/index.html', prettifyHTML(homeTheme(headModule(`${globals.title}${globals.homePageTitle || ""}`, globals.description, globals.keywords || [], 'main.css', globals.schema || undefined), header, globals.posts, footer)), () => {});
 sitemap.push({  loc: `${ globals.site }/index.html`, priority: 1 });
 fs.writeFileSync("_site/sitemap.xml", prettifyHTML(sitemapBuilder(sitemap)), () => {});
 fs.writeFileSync("_site/robots.txt", `User-agent: * \nSITEMAP: ${ globals.site }/sitemap.xml`, () => {});
