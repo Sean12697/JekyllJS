@@ -55,7 +55,8 @@ files.forEach(file => {
 // Create Home page
 globals.posts = globals.posts.sort((a, b) => (new Date(a.date) - new Date(b.date) > 0) ? -1 : 1);
 let footer = footerModule(globals.title, globals.description, globals.email, globals.social || [], "");
-fs.writeFileSync('_site/index.html', prettifyHTML(homeTheme(headModule(`${globals.title}${globals.homePageTitle || ""}`, globals.description, globals.keywords || [], 'main.css', globals.schema || undefined), header, globals.posts, footer)), () => {});
+let html = fs.existsSync("index.md") ? kramed(fs.readFileSync("index.md", "utf8")) : "";
+fs.writeFileSync('_site/index.html', prettifyHTML(homeTheme(headModule(`${globals.title}${globals.homePageTitle || ""}`, globals.description, globals.keywords || [], 'main.css', globals.schema || undefined), header, globals.posts, footer, html, globals.postName || "Posts")), () => {});
 sitemap.push({  loc: `${ globals.site }/index.html`, priority: 1 });
 fs.writeFileSync("_site/sitemap.xml", prettifyHTML(sitemapBuilder(sitemap)), () => {});
 fs.writeFileSync("_site/robots.txt", `User-agent: * \nSITEMAP: ${ globals.site }/sitemap.xml`, () => {});

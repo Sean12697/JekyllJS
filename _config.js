@@ -15,5 +15,6 @@ module.exports = {
         user: "sean12697",
         link: "https://twitter.com/Sean12697"
     }],
+    postName: "Posts",
     schema: undefined
 }
