@@ -14,8 +14,7 @@ const headModule = require("./_modules/head.js"),
     postTheme = require("./_layouts/post.js");
 
 // Generating reusable elements
-const header = headerModule(globals.title, "index.html"),
-    footer = footerModule(globals.title, globals.description, globals.email, globals.github_username, globals.twitter_username);
+const header = headerModule(globals.title, "index.html");
 
 // Moving static files to site
 shell.mkdir('-p', './_site');
@@ -30,7 +29,9 @@ files.forEach(file => {
         // Generating all of the HTML needed for this particular post
         let converted = mdToMetaAndText(data), date = new Date(converted[0].date),
             head = headModule(converted[0].title, globals.description, `${dirs.toRoot}main.css`),     
-            blogHeader = headerModule(globals.title, `${dirs.toRoot}index.html`);
+            blogHeader = headerModule(globals.title, `${dirs.toRoot}index.html`),
+            footer = footerModule(globals.title, globals.description, globals.email, globals.github_username, globals.twitter_username, dirs.toRoot);
+            
         let html = postTheme(head, blogHeader, converted[0].title, date.toISOString() , date.toDateString(), kramed(converted[1]), footer);
         // Storing this post
         shell.mkdir('-p', `./_site${dirs.dir}`);
@@ -46,6 +47,7 @@ files.forEach(file => {
 
 // Create Home page
 globals.posts = globals.posts.sort((a, b) => (new Date(a.date) - new Date(b.date) > 0) ? -1 : 1);
+let footer = footerModule(globals.title, globals.description, globals.email, globals.github_username, globals.twitter_username, "");
 fs.writeFileSync('./_site/index.html', homeTheme(headModule(globals.title, globals.description, 'main.css'), header, globals.posts, footer), (e) => {});
 
 
