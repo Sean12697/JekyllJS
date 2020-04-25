@@ -1,7 +1,5 @@
-const fs = require('fs'),
-    kramed = require('kramed'),
-    copydir = require('copy-dir'),
-    shell = require('shelljs');
+const fs = require('fs-extra'),
+    kramed = require('kramed');
 
 let globals = require('./_config.js');
 globals.posts = []; // Setting up array to store post data
@@ -17,15 +15,16 @@ const headModule = require("./_modules/head.js"),
 const header = headerModule(globals.title, "index.html");
 
 // Moving static files to site
-shell.mkdir('-p', './_site');
-copydir.sync('./_static', './_site');
+fs.ensureDirSync('_site');
+fs.emptyDirSync('_site');
+fs.copySync('_static', '_site');
 
 // Create Blog posts
-shell.mkdir('-p', './_site/posts/');
-let files = fs.readdirSync('./_posts');
+fs.ensureDirSync('-p', '_site/posts/');
+let files = fs.readdirSync('_posts');
 files.forEach(file => {
     if (file.endsWith(".md") || file.endsWith(".markdown")) {
-        let data = fs.readFileSync(`./_posts/${file}`), dirs = fileNameToDir(file);
+        let data = fs.readFileSync(`_posts/${file}`), dirs = fileNameToDir(file);
         // Generating all of the HTML needed for this particular post
         let converted = mdToMetaAndText(data), date = new Date(converted[0].date),
             head = headModule(converted[0].title, globals.description, `${dirs.toRoot}main.css`),     
@@ -34,8 +33,8 @@ files.forEach(file => {
             
         let html = postTheme(head, blogHeader, converted[0].title, date.toISOString() , date.toDateString(), kramed(converted[1]), footer);
         // Storing this post
-        shell.mkdir('-p', `./_site${dirs.dir}`);
-        fs.writeFileSync(`./_site${dirs.fullPath}`, html, (e) => {});
+        fs.ensureDirSync(`_site${dirs.dir}`);
+        fs.writeFileSync(`_site${dirs.fullPath}`, html, () => {});
         // Pushing needed variables to the global object to be used in the home page indexing
         globals.posts.push({
             date: date.toDateString(),
@@ -48,7 +47,7 @@ files.forEach(file => {
 // Create Home page
 globals.posts = globals.posts.sort((a, b) => (new Date(a.date) - new Date(b.date) > 0) ? -1 : 1);
 let footer = footerModule(globals.title, globals.description, globals.email, globals.social || [], "");
-fs.writeFileSync('./_site/index.html', homeTheme(headModule(globals.title, globals.description, 'main.css'), header, globals.posts, footer), (e) => {});
+fs.writeFileSync('_site/index.html', homeTheme(headModule(globals.title, globals.description, 'main.css'), header, globals.posts, footer), (e) => {});
 
 
 // ----------------------------------------- Functions --------------------------------------------------
