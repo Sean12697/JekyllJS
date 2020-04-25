@@ -1,9 +1,8 @@
-const fs = require('fs'),
+const fs = require('fs-extra'),
     kramed = require('kramed'),
-    copydir = require('copy-dir'),
-    shell = require('shelljs');
+    prettifyHTML = require("pretty");
 
-let globals = require('./_config.js');
+let globals = require('./_config.js'), sitemap = [];
 globals.posts = []; // Setting up array to store post data
 
 // Getting modules to reuse
@@ -14,42 +13,70 @@ const headModule = require("./_modules/head.js"),
     postTheme = require("./_layouts/post.js");
 
 // Generating reusable elements
-const header = headerModule(globals.title, "index.html"),
-    footer = footerModule(globals.title, globals.description, globals.email, globals.github_username, globals.twitter_username);
+const header = headerModule(globals.title, "index.html");
 
 // Moving static files to site
-shell.mkdir('-p', './_site');
-copydir.sync('./_static', './_site');
+fs.ensureDirSync('_site');
+fs.emptyDirSync('_site');
+fs.copySync('_static', '_site');
 
 // Create Blog posts
-shell.mkdir('-p', './_site/posts/');
-let files = fs.readdirSync('./_posts');
+fs.ensureDirSync('_site/posts/');
+let files = fs.readdirSync('_posts');
 files.forEach(file => {
     if (file.endsWith(".md") || file.endsWith(".markdown")) {
-        let data = fs.readFileSync(`./_posts/${file}`), dirs = fileNameToDir(file);
+        let data = fs.readFileSync(`_posts/${file}`), dirs = fileNameToDir(file);
         // Generating all of the HTML needed for this particular post
         let converted = mdToMetaAndText(data), date = new Date(converted[0].date),
-            head = headModule(converted[0].title, globals.description, `${dirs.toRoot}main.css`),     
-            blogHeader = headerModule(globals.title, `${dirs.toRoot}index.html`);
+            keywords = ((converted[0].keywords || "").split(",") || []).map(keyword => keyword.trim()),
+            head = headModule(`${converted[0].title} - ${globals.title}`, converted[1].substr(0, 160), keywords, `${dirs.toRoot}main.css`),     
+            blogHeader = headerModule(globals.title, `${dirs.toRoot}index.html`),
+            footer = footerModule(globals.title, globals.description, globals.email, globals.social || [], dirs.toRoot);
+
         let html = postTheme(head, blogHeader, converted[0].title, date.toISOString() , date.toDateString(), kramed(converted[1]), footer);
         // Storing this post
-        shell.mkdir('-p', `./_site${dirs.dir}`);
-        fs.writeFileSync(`./_site${dirs.fullPath}`, html, (e) => {});
+        fs.ensureDirSync(`_site${dirs.dir}`);
+        fs.writeFileSync(`_site${dirs.fullPath}`, prettifyHTML(html), () => {});
         // Pushing needed variables to the global object to be used in the home page indexing
         globals.posts.push({
             date: date.toDateString(),
             link: `.${dirs.fullPath}`,
             title: converted[0].title
         });
+        // Pushing to sitemap
+        sitemap.push({ 
+            loc: `${ globals.site }${ dirs.fullPath }`, 
+            priority: converted[0].priority || 0.5,
+            lastmod: date.toDateString()
+        });
     }
 });
 
 // Create Home page
 globals.posts = globals.posts.sort((a, b) => (new Date(a.date) - new Date(b.date) > 0) ? -1 : 1);
-fs.writeFileSync('./_site/index.html', homeTheme(headModule(globals.title, globals.description, 'main.css'), header, globals.posts, footer), (e) => {});
-
+let footer = footerModule(globals.title, globals.description, globals.email, globals.social || [], "");
+let html = fs.existsSync("index.md") ? kramed(fs.readFileSync("index.md", "utf8")) : "";
+fs.writeFileSync('_site/index.html', prettifyHTML(homeTheme(headModule(`${globals.title}${globals.homePageTitle || ""}`, globals.description, globals.keywords || [], 'main.css', globals.schema || undefined), header, globals.posts, footer, html, globals.postName || "Posts")), () => {});
+sitemap.push({  loc: `${ globals.site }/index.html`, priority: 1 });
+fs.writeFileSync("_site/sitemap.xml", prettifyHTML(sitemapBuilder(sitemap)), () => {});
+fs.writeFileSync("_site/robots.txt", `User-agent: * \nSITEMAP: ${ globals.site }/sitemap.xml`, () => {});
 
 // ----------------------------------------- Functions --------------------------------------------------
+
+function sitemapBuilder(sitemapJSON) {
+    return `
+        <?xml version="1.0" encoding="UTF-8"?>
+        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+            ${ sitemapJSON
+                .map(page => "<url>\n" + 
+                    Object.keys(page)
+                        .map(key => "<" + key + ">" + page[key] + "</" + key + ">")
+                        .join("\n")
+                + "\n</url>")
+                .join("\n") }
+        </urlset>
+    `
+}
 
 function fileNameToDir(fileName) {
     let _dir = "", _fileName = "", _fullPath = "", _toRoot = "../";
