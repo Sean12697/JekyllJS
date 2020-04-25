@@ -1,5 +1,6 @@
 module.exports = {
     title: "Your awesome title",
+    site: "https://jekyll-js.netlify.app",
     name: "Your name",
     email: "your-email@domain.com",
     description: "Write an awesome description for your new site here. You can edit this line in _config.js. It will appear in your document head meta (for Google search results).",

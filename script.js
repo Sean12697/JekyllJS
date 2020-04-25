@@ -1,7 +1,8 @@
 const fs = require('fs-extra'),
-    kramed = require('kramed');
+    kramed = require('kramed'),
+    prettifyHTML = require("pretty");
 
-let globals = require('./_config.js');
+let globals = require('./_config.js'), sitemap = [];
 globals.posts = []; // Setting up array to store post data
 
 // Getting modules to reuse
@@ -20,7 +21,7 @@ fs.emptyDirSync('_site');
 fs.copySync('_static', '_site');
 
 // Create Blog posts
-fs.ensureDirSync('-p', '_site/posts/');
+fs.ensureDirSync('_site/posts/');
 let files = fs.readdirSync('_posts');
 files.forEach(file => {
     if (file.endsWith(".md") || file.endsWith(".markdown")) {
@@ -34,12 +35,18 @@ files.forEach(file => {
         let html = postTheme(head, blogHeader, converted[0].title, date.toISOString() , date.toDateString(), kramed(converted[1]), footer);
         // Storing this post
         fs.ensureDirSync(`_site${dirs.dir}`);
-        fs.writeFileSync(`_site${dirs.fullPath}`, html, () => {});
+        fs.writeFileSync(`_site${dirs.fullPath}`, prettifyHTML(html), () => {});
         // Pushing needed variables to the global object to be used in the home page indexing
         globals.posts.push({
             date: date.toDateString(),
             link: `.${dirs.fullPath}`,
             title: converted[0].title
+        });
+        // Pushing to sitemap
+        sitemap.push({ 
+            loc: `${ globals.site }${ dirs.fullPath }`, 
+            priority: converted[0].priority || 0.5,
+            lastmod: date.toDateString()
         });
     }
 });
@@ -47,10 +54,27 @@ files.forEach(file => {
 // Create Home page
 globals.posts = globals.posts.sort((a, b) => (new Date(a.date) - new Date(b.date) > 0) ? -1 : 1);
 let footer = footerModule(globals.title, globals.description, globals.email, globals.social || [], "");
-fs.writeFileSync('_site/index.html', homeTheme(headModule(globals.title, globals.description, 'main.css'), header, globals.posts, footer), (e) => {});
-
+fs.writeFileSync('_site/index.html', prettifyHTML(homeTheme(headModule(globals.title, globals.description, 'main.css'), header, globals.posts, footer)), () => {});
+sitemap.push({  loc: `${ globals.site }/index.html`, priority: 1 });
+fs.writeFileSync("_site/sitemap.xml", prettifyHTML(sitemapBuilder(sitemap)), () => {});
+fs.writeFileSync("_site/robots.txt", `User-agent: * \nSITEMAP: ${ globals.site }/sitemap.xml`, () => {});
 
 // ----------------------------------------- Functions --------------------------------------------------
+
+function sitemapBuilder(sitemapJSON) {
+    return `
+        <?xml version="1.0" encoding="UTF-8"?>
+        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+            ${ sitemapJSON
+                .map(page => "<url>\n" + 
+                    Object.keys(page)
+                        .map(key => "<" + key + ">" + page[key] + "</" + key + ">")
+                        .join("\n")
+                + "\n</url>")
+                .join("\n") }
+        </urlset>
+    `
+}
 
 function fileNameToDir(fileName) {
     let _dir = "", _fileName = "", _fullPath = "", _toRoot = "../";
