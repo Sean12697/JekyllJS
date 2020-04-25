@@ -10,3 +10,9 @@ If you want to deploy this yourself to a live/free server so it is online, I wou
 
 * Build Command: `node script.js`
 * Publish Directory: `_site`
+
+## Valid Social Links in `_config.js`
+
+Currently all social media names below will have icons to represent them, in this example twitter and github have been used: 
+
+dribbble, facebook, flickr, github, googleplus, instagram, linkedin, pinterest, rss, stackoverflow, twitter, youtube and mastodon.
