@@ -49,7 +49,7 @@ files.forEach(file => {
         sitemap.push({ 
             loc: `${ globals.site }${ dirs.fullPath }`, 
             priority: converted[0].priority || 0.5,
-            lastmod: date.toDateString()
+            lastmod: date.toISOString()
         });
     }
 });
