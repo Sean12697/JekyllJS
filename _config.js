@@ -16,5 +16,6 @@ module.exports = {
         link: "https://twitter.com/Sean12697"
     }],
     postName: "Posts",
-    schema: undefined
+    schema: undefined,
+    preview: true // On the home page should it show a preview of the blog post
 }
