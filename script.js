@@ -29,7 +29,8 @@ files.forEach(file => {
         // Generating all of the HTML needed for this particular post
         let converted = mdToMetaAndText(data), date = new Date(converted[0].date),
             keywords = ((converted[0].keywords || "").split(",") || []).map(keyword => keyword.trim()),
-            head = headModule(`${converted[0].title} - ${globals.title}`, converted[1].substr(0, 160), keywords, `${dirs.toRoot}main.css`),     
+            shortenedDesc = shortenDesc(converted[1]),
+            head = headModule(`${converted[0].title} - ${globals.title}`, shortenedDesc, keywords, `${dirs.toRoot}main.css`),     
             blogHeader = headerModule(globals.title, `${dirs.toRoot}index.html`),
             footer = footerModule(globals.title, globals.description, globals.email, globals.social || [], dirs.toRoot);
 
@@ -41,7 +42,8 @@ files.forEach(file => {
         globals.posts.push({
             date: date.toDateString(),
             link: `.${dirs.fullPath}`,
-            title: converted[0].title
+            title: converted[0].title,
+            preview: globals.preview ? shortenedDesc : undefined
         });
         // Pushing to sitemap
         sitemap.push({ 
@@ -121,4 +123,8 @@ function mdToMetaAndText(data) {
 
 function lineDashed(line) {
     return (line.replace(/\s/g, '').replace(/-/g, '').length == 0);
+}
+
+function shortenDesc(desc) {
+    return desc.length > 157 ? `${desc.substr(0, 157)}...` : desc;
 }
